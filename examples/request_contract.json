@@ -1,0 +1,19 @@
+{
+  "request_id": "8c0958d6-fbfb-4b71-a496-a3f4d611fd6f",
+  "tenant_id": "retail-us",
+  "site_name": "Example Electronics Store",
+  "source_url": "https://example.com/category/laptops",
+  "crawl_ts": "2026-08-22T10:00:00Z",
+  "max_products": 120,
+  "max_depth": 2,
+  "allowed_domains": ["example.com"],
+  "use_browser_fallback": false,
+  "include_raw_html": false,
+  "source_meta": {
+    "country": "US",
+    "currency_hint": "USD"
+  },
+  "output": {
+    "destination": "./out"
+  }
+}

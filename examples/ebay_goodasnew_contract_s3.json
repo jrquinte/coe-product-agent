@@ -1,0 +1,19 @@
+{
+  "request_id": "ebay-gane-001",
+  "tenant_id": "default",
+  "site_name": "Good As New Electronics (eBay)",
+  "source_url": "https://www.ebay.com/str/goodasnewelectronics",
+  "crawl_ts": "2026-08-23T00:00:00Z",
+  "max_products": 48,
+  "max_depth": 1,
+  "allowed_domains": ["www.ebay.com", "ebay.com"],
+  "use_browser_fallback": false,
+  "include_raw_html": false,
+  "source_meta": {
+    "country": "US",
+    "currency_hint": "USD"
+  },
+  "output": {
+    "destination": "s3://coe-aws-agent-product/"
+  }
+}

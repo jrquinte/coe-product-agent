@@ -1,0 +1,79 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "coe-product-agent"
+version = "1.0.0"
+description = "AWS AgentCore-compatible product scraper using Strands framework"
+requires-python = ">=3.11"
+license = {text = "Proprietary"}
+authors = [
+    {name = "CoE", email = "coe@mail.com"}
+]
+keywords = [
+    "ai-agent",
+    "web-scraping",
+    "product-extraction",
+    "bedrock",
+    "agentcore",
+    "strands"
+]
+
+dependencies = [
+    "bedrock-agentcore>=1.4.0",
+    "strands-agents>=1.28.0",
+    "pydantic>=2.12.0",
+    "python-dotenv>=1.2.0",
+    "httpx>=0.28.0",
+    "beautifulsoup4>=4.12.0",
+    "boto3>=1.42.0",
+    "aws-opentelemetry-distro>=0.12.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.0",
+    "pytest-asyncio>=0.21.0",
+    "pytest-cov>=4.1.0",
+    "pytest-mock>=3.11.0",
+    "black>=23.0.0",
+    "ruff>=0.1.0",
+    "mypy>=1.4.0",
+    "types-beautifulsoup4>=4.12.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+asyncio_mode = "auto"
+addopts = [
+    "-v",
+    "--strict-markers",
+    "--tb=short",
+    "--cov=src",
+    "--cov-report=term-missing",
+]
+markers = [
+    "unit: Unit tests",
+    "integration: Integration tests",
+    "slow: Slow running tests",
+]
+
+[tool.black]
+line-length = 100
+target-version = ["py311"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+select = ["E", "F", "W", "I", "UP"]
+ignore = ["E501"]
+
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false

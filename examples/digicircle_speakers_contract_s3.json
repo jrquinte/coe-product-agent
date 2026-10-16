@@ -1,0 +1,19 @@
+{
+  "request_id": "dc-spkr-001",
+  "tenant_id": "default",
+  "site_name": "DigiCircle Speakers",
+  "source_url": "https://www.digicircle.com/ols_buy.php?product=SPKR",
+  "crawl_ts": "2026-08-23T00:00:00Z",
+  "max_products": 100,
+  "max_depth": 2,
+  "allowed_domains": ["www.digicircle.com", "digicircle.com"],
+  "use_browser_fallback": false,
+  "include_raw_html": false,
+  "source_meta": {
+    "country": "US",
+    "currency_hint": "USD"
+  },
+  "output": {
+    "destination": "s3://coe-aws-agent-product/"
+  }
+}

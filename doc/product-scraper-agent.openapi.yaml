@@ -1,0 +1,495 @@
+openapi: 3.1.0
+info:
+  title: Product Scraper Agent API
+  version: 1.0.0
+  summary: Contract-first API for discovery and extraction of product data from a seed URL.
+  description: |
+    Receives a crawl contract JSON with a source URL, discovers product links,
+    loops through each product page, extracts normalized product records,
+    and returns one aggregated result JSON.
+servers:
+  - url: https://api.example.com
+    description: Production
+  - url: http://localhost:8080
+    description: Local development
+paths:
+  /v1/product-scraper/extract:
+    post:
+      operationId: extractProducts
+      summary: Discover product links and return aggregated extracted products.
+      description: |
+        Executes the full workflow:
+        1) discovery from source_url,
+        2) per-product extraction loop,
+        3) schema validation and aggregation.
+      tags:
+        - ProductScraper
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductScrapeRequest'
+            examples:
+              basicCategoryCrawl:
+                summary: Crawl a category page
+                value:
+                  request_id: 8c0958d6-fbfb-4b71-a496-a3f4d611fd6f
+                  tenant_id: retail-us
+                  source_url: https://example.com/category/laptops
+                  crawl_ts: 2026-08-22T10:30:00Z
+                  max_products: 120
+                  max_depth: 2
+                  allowed_domains:
+                    - example.com
+                  use_browser_fallback: false
+                  include_raw_html: false
+                  source_meta:
+                    country: US
+                    currency_hint: USD
+      responses:
+        '200':
+          description: Aggregated extraction result.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductScrapeResult'
+              examples:
+                completed:
+                  summary: Successful aggregated response
+                  value:
+                    request_id: 8c0958d6-fbfb-4b71-a496-a3f4d611fd6f
+                    source_url: https://example.com/category/laptops
+                    status: completed
+                    started_at: 2026-08-22T10:30:00Z
+                    finished_at: 2026-08-22T10:32:11Z
+                    summary:
+                      discovered_links: 148
+                      processed_links: 120
+                      successful_products: 116
+                      failed_products: 4
+                      duplicates_removed: 9
+                      cache_hits: 41
+                    products:
+                      - product_id: p_57f3f5ad9efec0e8
+                        source_url: https://example.com/product/abc
+                        canonical_url: https://example.com/product/abc
+                        title: Ultrabook 14
+                        brand: Samsung
+                        description: Lightweight laptop for business use
+                        category: Laptops
+                        price:
+                          amount: 999.99
+                          currency: USD
+                        availability: in_stock
+                        images:
+                          - https://cdn.example.com/images/abc-1.jpg
+                        attributes:
+                          color: silver
+                          size: 14-inch
+                        variants:
+                          - sku: ABC-14-SLV
+                            price:
+                              amount: 999.99
+                              currency: USD
+                        confidence: 0.95
+                        extraction_meta:
+                          model: nova-2-lite
+                          token_in: 6400
+                          token_out: 820
+                          cache_hit: false
+                          schema_version: v1
+                          extraction_duration_ms: 2800
+                    errors:
+                      - url: https://example.com/product/xyz
+                        stage: fetch
+                        reason: timeout after retry limit
+                        retry_count: 2
+                        recoverable: false
+        '400':
+          description: Invalid request payload.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '422':
+          description: Contract is valid JSON but violates business constraints.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '429':
+          description: Request throttled due to concurrency or rate limits.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '500':
+          description: Internal processing failure.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+components:
+  schemas:
+    ProductScrapeRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - request_id
+        - tenant_id
+        - source_url
+        - crawl_ts
+        - max_products
+        - max_depth
+        - allowed_domains
+        - use_browser_fallback
+        - include_raw_html
+        - source_meta
+      properties:
+        request_id:
+          type: string
+          format: uuid
+          description: Client-generated idempotency and trace identifier.
+        tenant_id:
+          type: string
+          minLength: 1
+          maxLength: 128
+        source_url:
+          type: string
+          format: uri
+          pattern: '^https?://.+'
+          description: Seed URL where discovery starts.
+        crawl_ts:
+          type: string
+          format: date-time
+        max_products:
+          type: integer
+          minimum: 1
+          maximum: 1000
+          default: 200
+        max_depth:
+          type: integer
+          minimum: 0
+          maximum: 5
+          default: 2
+        allowed_domains:
+          type: array
+          minItems: 1
+          maxItems: 50
+          uniqueItems: true
+          items:
+            type: string
+            pattern: '^[a-zA-Z0-9.-]+$'
+          description: Domains allowed during link discovery and detail crawl.
+        use_browser_fallback:
+          type: boolean
+          default: false
+          description: Use browser rendering when static fetch is insufficient.
+        include_raw_html:
+          type: boolean
+          default: false
+          description: If true, include raw_html_ref in each product metadata.
+        source_meta:
+          $ref: '#/components/schemas/SourceMeta'
+
+    SourceMeta:
+      type: object
+      additionalProperties: false
+      required:
+        - country
+        - currency_hint
+      properties:
+        country:
+          type: string
+          minLength: 2
+          maxLength: 2
+          pattern: '^[A-Z]{2}$'
+        currency_hint:
+          type: string
+          minLength: 3
+          maxLength: 3
+          pattern: '^[A-Z]{3}$'
+
+    ProductScrapeResult:
+      type: object
+      additionalProperties: false
+      required:
+        - request_id
+        - source_url
+        - status
+        - started_at
+        - finished_at
+        - summary
+        - products
+        - errors
+      properties:
+        request_id:
+          type: string
+          format: uuid
+        source_url:
+          type: string
+          format: uri
+        status:
+          type: string
+          enum:
+            - completed
+            - partial
+            - failed
+        started_at:
+          type: string
+          format: date-time
+        finished_at:
+          type: string
+          format: date-time
+        summary:
+          $ref: '#/components/schemas/ResultSummary'
+        products:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProductRecord'
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProductError'
+
+    ResultSummary:
+      type: object
+      additionalProperties: false
+      required:
+        - discovered_links
+        - processed_links
+        - successful_products
+        - failed_products
+        - duplicates_removed
+        - cache_hits
+      properties:
+        discovered_links:
+          type: integer
+          minimum: 0
+        processed_links:
+          type: integer
+          minimum: 0
+        successful_products:
+          type: integer
+          minimum: 0
+        failed_products:
+          type: integer
+          minimum: 0
+        duplicates_removed:
+          type: integer
+          minimum: 0
+        cache_hits:
+          type: integer
+          minimum: 0
+
+    ProductRecord:
+      type: object
+      additionalProperties: false
+      required:
+        - product_id
+        - source_url
+        - title
+        - brand
+        - description
+        - category
+        - price
+        - availability
+        - images
+        - attributes
+        - variants
+        - confidence
+        - extraction_meta
+      properties:
+        product_id:
+          type: string
+          minLength: 1
+          maxLength: 256
+        source_url:
+          type: string
+          format: uri
+        canonical_url:
+          type:
+            - string
+            - 'null'
+          format: uri
+        title:
+          type: string
+          minLength: 1
+          maxLength: 1000
+        brand:
+          type:
+            - string
+            - 'null'
+          maxLength: 256
+        description:
+          type:
+            - string
+            - 'null'
+          maxLength: 20000
+        category:
+          type:
+            - string
+            - 'null'
+          maxLength: 512
+        price:
+          $ref: '#/components/schemas/Money'
+        availability:
+          type: string
+          enum:
+            - in_stock
+            - out_of_stock
+            - preorder
+            - unknown
+        images:
+          type: array
+          maxItems: 50
+          items:
+            type: string
+            format: uri
+        attributes:
+          $ref: '#/components/schemas/ProductAttributes'
+        variants:
+          type: array
+          maxItems: 200
+          items:
+            $ref: '#/components/schemas/ProductVariant'
+        confidence:
+          type: number
+          minimum: 0
+          maximum: 1
+        extraction_meta:
+          $ref: '#/components/schemas/ExtractionMeta'
+
+    ProductAttributes:
+      type: object
+      additionalProperties:
+        type:
+          - string
+          - 'null'
+      properties:
+        color:
+          type:
+            - string
+            - 'null'
+        size:
+          type:
+            - string
+            - 'null'
+
+    ProductVariant:
+      type: object
+      additionalProperties: false
+      required:
+        - sku
+        - price
+      properties:
+        sku:
+          type:
+            - string
+            - 'null'
+          maxLength: 256
+        price:
+          $ref: '#/components/schemas/Money'
+
+    Money:
+      type: object
+      additionalProperties: false
+      required:
+        - amount
+        - currency
+      properties:
+        amount:
+          type: number
+          minimum: 0
+        currency:
+          type: string
+          pattern: '^[A-Z]{3}$'
+
+    ExtractionMeta:
+      type: object
+      additionalProperties: false
+      required:
+        - model
+        - token_in
+        - token_out
+        - cache_hit
+        - schema_version
+      properties:
+        model:
+          type: string
+          minLength: 1
+          maxLength: 128
+        token_in:
+          type: integer
+          minimum: 0
+        token_out:
+          type: integer
+          minimum: 0
+        cache_hit:
+          type: boolean
+        schema_version:
+          type: string
+          minLength: 1
+          maxLength: 32
+        extraction_duration_ms:
+          type: integer
+          minimum: 0
+        raw_html_ref:
+          type:
+            - string
+            - 'null'
+          description: Reference to raw HTML in object storage when include_raw_html=true.
+
+    ProductError:
+      type: object
+      additionalProperties: false
+      required:
+        - url
+        - stage
+        - reason
+        - retry_count
+      properties:
+        url:
+          type: string
+          format: uri
+        stage:
+          type: string
+          enum:
+            - discover
+            - fetch
+            - extract
+            - validate
+            - dedup
+        reason:
+          type: string
+          minLength: 1
+          maxLength: 4000
+        retry_count:
+          type: integer
+          minimum: 0
+        recoverable:
+          type: boolean
+
+    ApiError:
+      type: object
+      additionalProperties: false
+      required:
+        - error_code
+        - message
+        - request_id
+      properties:
+        error_code:
+          type: string
+          minLength: 1
+          maxLength: 64
+        message:
+          type: string
+          minLength: 1
+          maxLength: 4000
+        request_id:
+          type: string
+          format: uuid
+        details:
+          type: object
+          additionalProperties: true

@@ -1,0 +1,16 @@
+{
+  "request_id": "amz-sony-001",
+  "tenant_id": "default",
+  "site_name": "Sony Amazon Store",
+  "source_url": "https://www.amazon.com/stores/Sony/page/AEA5D08A-7FC6-45D4-B121-C8A6FA25219F",
+  "crawl_ts": "2026-08-23T00:00:00Z",
+  "max_products": 50,
+  "max_depth": 1,
+  "allowed_domains": ["www.amazon.com", "amazon.com"],
+  "use_browser_fallback": true,
+  "include_raw_html": false,
+  "source_meta": {
+    "country": "US",
+    "currency_hint": "USD"
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "request_id": "iwm-laptop-001",
+  "tenant_id": "default",
+  "site_name": "ItsWorthMore Refurbished Laptops",
+  "source_url": "https://buy.itsworthmore.com/collections/laptop",
+  "crawl_ts": "2026-08-23T00:00:00Z",
+  "max_products": 80,
+  "max_depth": 1,
+  "allowed_domains": ["buy.itsworthmore.com", "itsworthmore.com"],
+  "use_browser_fallback": false,
+  "include_raw_html": false,
+  "source_meta": {
+    "country": "US",
+    "currency_hint": "USD"
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "request_id": "wsc-iphone-001",
+  "tenant_id": "default",
+  "site_name": "WeSellCellular Wholesale iPhones",
+  "source_url": "https://www.wesellcellular.com/buy-wholesale-iphones-in-bulk",
+  "crawl_ts": "2026-08-23T00:00:00Z",
+  "max_products": 30,
+  "max_depth": 1,
+  "allowed_domains": ["www.wesellcellular.com", "wesellcellular.com"],
+  "use_browser_fallback": true,
+  "include_raw_html": false,
+  "_note": "Wix site — product links require JavaScript rendering. use_browser_fallback must be true (Playwright needed).",
+  "source_meta": {
+    "country": "US",
+    "currency_hint": "USD"
+  }
+}
